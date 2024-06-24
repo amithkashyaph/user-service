@@ -39,7 +39,12 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public UserDto signup(String email, String password) {
         User user = new User();
-        return null;
+        user.setEmail(email);
+        user.setPassword(bCryptPasswordEncoder.encode(password));
+
+        User savedUser = userRespository.save(user);
+
+        return UserDto.from(savedUser);
     }
 
     @Override
