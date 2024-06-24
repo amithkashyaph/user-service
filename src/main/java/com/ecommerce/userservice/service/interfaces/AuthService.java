@@ -10,7 +10,7 @@ public interface AuthService {
 
     ResponseEntity<Void> logout(String token, Long userId);
 
-    ResponseEntity<UserDto> signup(String email, String password);
+    UserDto signup(String email, String password);
 
     SessionStatus validate(String token, Long userId);
 }
