@@ -9,10 +9,15 @@ import com.ecommerce.userservice.repository.UserRespository;
 import com.ecommerce.userservice.service.interfaces.AuthService;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.MultiValueMapAdapter;
 
+import java.util.HashMap;
 import java.util.Optional;
 
 @Service
@@ -51,7 +56,15 @@ public class AuthServiceImpl implements AuthService {
         session.setUser(user);
         session.setToken(token);
         sessionRepository.save(session);
-        return null;
+
+        UserDto userDto = new UserDto();
+
+        MultiValueMapAdapter<String, String> headers = new MultiValueMapAdapter<>(new HashMap<>());
+        headers.add(HttpHeaders.SET_COOKIE, "auth-token:" + token);
+
+        ResponseEntity<UserDto> response = new ResponseEntity<>(userDto, headers, HttpStatus.OK);
+
+        return response;
     }
 
     @Override
