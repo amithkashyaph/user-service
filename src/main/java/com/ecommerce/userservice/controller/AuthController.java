@@ -1,5 +1,7 @@
 package com.ecommerce.userservice.controller;
 
+import com.ecommerce.userservice.dto.LoginRequestDto;
+import com.ecommerce.userservice.dto.LogoutRequestDto;
 import com.ecommerce.userservice.dto.SignUpRequestDto;
 import com.ecommerce.userservice.dto.UserDto;
 import com.ecommerce.userservice.service.interfaces.AuthService;
@@ -28,4 +30,11 @@ public class AuthController {
 
         return new ResponseEntity(userDto, HttpStatus.CREATED);
     }
+
+    @PostMapping("/login")
+    public ResponseEntity<UserDto> login(@RequestBody LoginRequestDto loginRequestDto) {
+        return authService.login(loginRequestDto.getEmail(), loginRequestDto.getPassword());
+    }
+
+
 }
