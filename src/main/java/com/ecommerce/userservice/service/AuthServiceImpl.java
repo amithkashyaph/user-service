@@ -58,6 +58,8 @@ public class AuthServiceImpl implements AuthService {
         sessionRepository.save(session);
 
         UserDto userDto = new UserDto();
+        userDto.setEmail(email);
+
 
         MultiValueMapAdapter<String, String> headers = new MultiValueMapAdapter<>(new HashMap<>());
         headers.add(HttpHeaders.SET_COOKIE, "auth-token:" + token);
