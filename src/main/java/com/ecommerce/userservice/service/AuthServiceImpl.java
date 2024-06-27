@@ -71,6 +71,16 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public ResponseEntity<Void> logout(String token, Long userId) {
+        Optional<Session> optionalSession = sessionRepository.findByTokenAndUser_Id(token, userId);
+
+        if(optionalSession.isEmpty()) {
+            return null;
+        }
+
+        Session session = optionalSession.get();
+
+        session.setSessionStatus(SessionStatus.ENDED);
+        sessionRepository.save(session);
         return null;
     }
 
