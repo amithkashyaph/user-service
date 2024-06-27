@@ -7,7 +7,10 @@ import com.ecommerce.userservice.entity.User;
 import com.ecommerce.userservice.repository.SessionRepository;
 import com.ecommerce.userservice.repository.UserRespository;
 import com.ecommerce.userservice.service.interfaces.AuthService;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.MacAlgorithm;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -17,8 +20,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMapAdapter;
 
-import java.util.HashMap;
-import java.util.Optional;
+import javax.crypto.SecretKey;
+import java.util.*;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -49,12 +52,26 @@ public class AuthServiceImpl implements AuthService {
             return null;
         }
 
-        String token = RandomStringUtils.randomAlphanumeric(30);
+//        String token = RandomStringUtils.randomAlphanumeric(30);
+
+        MacAlgorithm alg = Jwts.SIG.HS512; //or HS384 or HS256
+        SecretKey key = alg.key().build();
+
+        Map<String, Object> claimsMap = new HashMap<>();
+        claimsMap.put("email", user.getEmail());
+        claimsMap.put("roles", user.getRoles());
+        claimsMap.put("createdAt", new Date());
+        claimsMap.put("expiryAt", DateUtils.addDays(new Date(), 30));
+
+        String jwtToken = Jwts.builder()
+                .claims(claimsMap)
+                .signWith(key, alg)
+                .compact();
 
         Session session = new Session();
         session.setSessionStatus(SessionStatus.ACTIVE);
         session.setUser(user);
-        session.setToken(token);
+        session.setToken(jwtToken);
         sessionRepository.save(session);
 
         UserDto userDto = new UserDto();
@@ -62,7 +79,7 @@ public class AuthServiceImpl implements AuthService {
 
 
         MultiValueMapAdapter<String, String> headers = new MultiValueMapAdapter<>(new HashMap<>());
-        headers.add(HttpHeaders.SET_COOKIE, "auth-token:" + token);
+        headers.add(HttpHeaders.SET_COOKIE, "auth-token:" + jwtToken);
 
         ResponseEntity<UserDto> response = new ResponseEntity<>(userDto, headers, HttpStatus.OK);
 
