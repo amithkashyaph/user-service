@@ -7,11 +7,16 @@ import com.ecommerce.userservice.entity.User;
 import com.ecommerce.userservice.repository.SessionRepository;
 import com.ecommerce.userservice.repository.UserRespository;
 import com.ecommerce.userservice.service.interfaces.AuthService;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.MacAlgorithm;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -21,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMapAdapter;
 
 import javax.crypto.SecretKey;
+import java.security.Key;
 import java.util.*;
 
 @Service
@@ -31,6 +37,14 @@ public class AuthServiceImpl implements AuthService {
     private SessionRepository sessionRepository;
 
     private BCryptPasswordEncoder bCryptPasswordEncoder;
+
+    @Value("${jwt.token.secret}")
+    private String secret;
+
+    private Key getSigningKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(this.secret);
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
 
     @Autowired
     public AuthServiceImpl(UserRespository userRespository, SessionRepository sessionRepository, BCryptPasswordEncoder bCryptPasswordEncoder) {
@@ -65,7 +79,7 @@ public class AuthServiceImpl implements AuthService {
 
         String jwtToken = Jwts.builder()
                 .claims(claimsMap)
-                .signWith(key, alg)
+                .signWith(getSigningKey())
                 .compact();
 
         Session session = new Session();
@@ -114,6 +128,33 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public SessionStatus validate(String token, Long userId) {
-        return null;
+        Optional<Session> optionalSession = sessionRepository.findByTokenAndUser_Id(token, userId);
+
+        if(optionalSession.isEmpty()) {
+            return null;
+        }
+
+        Session session = optionalSession.get();
+
+        if(!session.getSessionStatus().equals(SessionStatus.ACTIVE)) {
+            return SessionStatus.ENDED;
+        }
+
+        Jws<Claims> claimsMap = Jwts.parser()
+                .verifyWith((SecretKey) getSigningKey())
+                .build().parseSignedClaims(token);
+
+        // Extract payload from token
+        Map<String, Object> payloadMap = claimsMap.getPayload();
+
+        String email = (String) payloadMap.get("email");
+        Date createdAt = new Date((Long) payloadMap.get("createdAt"));
+        Date expiryAt = new Date((Long) payloadMap.get("expiryAt"));
+
+        if(expiryAt.before(new Date())) {
+            return SessionStatus.ENDED;
+        }
+
+        return SessionStatus.ACTIVE;
     }
 }
