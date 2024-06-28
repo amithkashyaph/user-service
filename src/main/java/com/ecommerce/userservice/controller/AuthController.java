@@ -36,5 +36,10 @@ public class AuthController {
         return authService.login(loginRequestDto.getEmail(), loginRequestDto.getPassword());
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestBody LogoutRequestDto logoutRequestDto) {
+        return authService.logout(logoutRequestDto.getToken(), logoutRequestDto.getUserId());
+    }
+
 
 }
