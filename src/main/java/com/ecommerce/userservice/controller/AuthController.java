@@ -1,9 +1,6 @@
 package com.ecommerce.userservice.controller;
 
-import com.ecommerce.userservice.dto.LoginRequestDto;
-import com.ecommerce.userservice.dto.LogoutRequestDto;
-import com.ecommerce.userservice.dto.SignUpRequestDto;
-import com.ecommerce.userservice.dto.UserDto;
+import com.ecommerce.userservice.dto.*;
 import com.ecommerce.userservice.service.interfaces.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -39,6 +36,11 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@RequestBody LogoutRequestDto logoutRequestDto) {
         return authService.logout(logoutRequestDto.getToken(), logoutRequestDto.getUserId());
+    }
+
+    @PostMapping("/validate")
+    public void validate(@RequestBody ValidateTokenRequestDto validateTokenRequestDto) {
+          authService.validate(validateTokenRequestDto.getToken(), validateTokenRequestDto.getUserId());
     }
 
 
